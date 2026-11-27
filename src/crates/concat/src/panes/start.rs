@@ -96,10 +96,8 @@ pub fn shown<'a>(
 
 /// The official site, which the guides and the developer docs are pages of.
 const SITE: &str = "https://concat.standalones.org";
-/// Concat's home on the web: its library and its forum.
-const HOME: &str = "https://concatapp.com/";
 /// The repository: the code, the issues, the releases.
-pub const REPOSITORY: &str = "https://github.com/jub0t/Concat";
+pub const REPOSITORY: &str = "https://github.com/clankclankclankclank/Framecut";
 
 /// Where each of the launch screen's links goes, by the name the screen
 /// sends. One table, so a moved page is one line here. Every address is a
@@ -109,10 +107,9 @@ pub const REPOSITORY: &str = "https://github.com/jub0t/Concat";
 pub fn link(name: &str) -> Option<String> {
     Some(match name {
         "guides" => format!("{SITE}/guides/"),
-        "report" => format!("{SITE}/guides/report-a-problem/"),
+        "report" => format!("{REPOSITORY}/issues/new"),
         "github" => REPOSITORY.to_owned(),
-        // The gradient card: Concat's home on the web.
-        "website" => HOME.to_owned(),
+        "website" => format!("{REPOSITORY}/blob/main/docs/FRAMECUT.md"),
         // The invite the README carries.
         "discord" => "https://discord.gg/DVuPfpXfqP".to_owned(),
         // The notes for the release this build is, under the tag the
@@ -184,13 +181,13 @@ fn default_location() -> String {
     location_on(dirs::desktop_dir(), home_folder)
 }
 
-/// Where a new project goes: a Concat folder on the desktop. The desktop
+/// Where a new project goes: a Framecut folder on the desktop. The desktop
 /// the system names, not `~/Desktop`: on Windows OneDrive often moves it,
 /// and on Linux it is called what the desktop's language calls it.
 fn location_on(desktop: Option<PathBuf>, home: impl Fn(&str) -> String) -> String {
     desktop
-        .map(|desktop| desktop.join("Concat").to_string_lossy().into_owned())
-        .unwrap_or_else(|| home("Desktop/Concat"))
+        .map(|desktop| desktop.join("Framecut").to_string_lossy().into_owned())
+        .unwrap_or_else(|| home("Desktop/Framecut"))
 }
 
 /// What an unnamed project is called, in the interface's language: the name
@@ -601,9 +598,9 @@ mod tests {
         let home = |name: &str| format!("/home/{name}");
         assert_eq!(
             PathBuf::from(location_on(Some(PathBuf::from("/desk")), home)),
-            Path::new("/desk").join("Concat")
+            Path::new("/desk").join("Framecut")
         );
-        assert_eq!(location_on(None, home), "/home/Desktop/Concat");
+        assert_eq!(location_on(None, home), "/home/Desktop/Framecut");
     }
 
     /// The next untitled name skips every folder already there, and starts

@@ -155,4 +155,5 @@ profile=${FRAMECUT_PROFILE:-quick}
 if [[ "$mode" == build ]]; then
     exec cargo build --locked --profile "$profile" -p concat
 fi
+printf '%s\n' "The final Slint compile and link can take several minutes near the end of Cargo's progress counter."
 exec cargo run --locked --profile "$profile" -p concat -- "$@"

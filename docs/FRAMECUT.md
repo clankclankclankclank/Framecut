@@ -1,6 +1,6 @@
 # Framecut
 
-Framecut is an independent fork of [Concat](https://github.com/jub0t/Concat), based on upstream commit `22dcbdc`. It keeps the upstream Rust workspace under `src/crates`, the shared wgpu preview and export pipeline, FFmpeg development libraries, and the native Slint editor. The landing page in `site/` is static and can be served independently.
+Framecut is an independent project built from [Concat](https://github.com/jub0t/Concat), based on upstream commit `22dcbdc`. It keeps the upstream Rust workspace under `src/crates`, the shared wgpu preview and export pipeline, FFmpeg development libraries, and the native Slint editor. The landing page in `site/` is static and can be served independently.
 
 The upstream and modified source are available under **AGPL-3.0-or-later**. Preserve the [license](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md). If you convey builds or operate a modified network-facing version, provide the corresponding source as required by the AGPL. The Framecut name and icon identify this fork. See the [upstream trademark policy](../TRADEMARK.md).
 
@@ -13,12 +13,12 @@ xcode-select --install
 brew install rustup cmake pkgconf ffmpeg
 ```
 
-Download the [Framecut source ZIP](https://github.com/clankclankclankclank/Concat/archive/refs/heads/framecut.zip) into `~/Downloads`. Extract it and launch the editor with these commands.
+Download the [Framecut source ZIP](https://github.com/clankclankclankclank/Framecut/archive/refs/heads/main.zip) into `~/Downloads`. Extract it and launch the editor with these commands.
 
 ```sh
 cd ~/Downloads
-unzip Concat-framecut.zip
-cd Concat-framecut
+unzip Framecut-main.zip
+cd Framecut-main
 bash build_and_run_macos.sh --workspace "$PWD"
 ```
 
@@ -26,18 +26,18 @@ If you already have the launcher in Downloads or another checkout, let it extrac
 
 ```sh
 cd ~/Downloads
-bash /path/to/build_and_run_macos.sh --zip Concat-framecut.zip
+bash /path/to/build_and_run_macos.sh --zip Framecut-main.zip
 ```
 
 The launcher also checks for `~/Downloads/Framecut` and automatically finds the newest `Concat*.zip` or `Framecut*.zip` when no path is passed. An explicit archive extracts to `~/Downloads/<archive-stem>-workspace`. It reuses that folder on later invocations. For a different source revision, use a ZIP with a different basename. Use `--check` to validate the workspace and installed tools, `--build-only` to compile without opening a window, or double-click `build_and_run_macos.command` from the source tree. Both launcher files must be next to one another.
 
-The Rust toolchain is pinned in `src/rust-toolchain.toml`. FFmpeg 7+ headers and libraries are needed to link the engine. The Apple Silicon verification used FFmpeg 9.1. Use a native Homebrew installation for your Mac's architecture. The editor and static site require no Node.js or npm. The first build can take several minutes while Cargo downloads dependencies and native libraries.
+The Rust toolchain is pinned in `src/rust-toolchain.toml`. FFmpeg 7+ headers and libraries are needed to link the engine. The Apple Silicon verification used FFmpeg 9.1. Use a native Homebrew installation for your Mac's architecture. The editor and static site have no Node.js build step. The first build can take several minutes while Cargo downloads dependencies and native libraries. Near the end of the progress counter, the Slint compiler and linker can run for several minutes between updates.
 
 The equivalent direct build and launch commands are:
 
 ```sh
 export PATH="$(brew --prefix rustup)/bin:$PATH"
-cd ~/Downloads/Concat-framecut/src
+cd ~/Downloads/Framecut-main/src
 cargo build --locked --profile quick -p concat
 cargo run --locked --profile quick -p concat
 ```
@@ -72,7 +72,7 @@ Preview and export resolve the same manifests, parameters, effect order and shad
 ## Preview the website
 
 ```sh
-cd ~/Downloads/Concat-framecut
+cd ~/Downloads/Framecut-main
 python3 -m http.server 8764 --bind 127.0.0.1 --directory site
 ```
 

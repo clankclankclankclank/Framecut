@@ -20,16 +20,8 @@
 
 use std::path::{Path, PathBuf};
 
-/// The app identifier, which is also the folder name everywhere. Every
-/// release so far has used it; a phone treats a new one as another app,
-/// so it changes only with a domain of the project's own behind it.
-pub const IDENTIFIER: &str = "app.concat.editor";
-
-/// The identifier builds of `main` used between 2026-10-26 and
-/// 2026-11-04, never released. Those builds moved the folder to it and
-/// left a link at the old name, which [`IDENTIFIER`] now finds again;
-/// [`adopt`] moves the folder back where there is no link.
-const FORMER_IDENTIFIER: &str = "org.standalones.concat";
+/// Framecut's app identifier and settings directory.
+pub const IDENTIFIER: &str = "app.framecut.editor";
 
 /// The app's own directories on this machine.
 #[derive(Clone, Debug)]
@@ -50,10 +42,7 @@ impl AppDirs {
         }
         let convention = convention(std::env::consts::OS);
         if convention == Convention::Apple {
-            let dirs = apple(&home()?);
-            adopt(&dirs.config);
-            adopt(&dirs.data);
-            Ok(dirs)
+            Ok(apple(&home()?))
         } else if convention == Convention::Windows {
             let config = std::env::var_os("APPDATA")
                 .map(PathBuf::from)
@@ -62,8 +51,6 @@ impl AppDirs {
             let data = std::env::var_os("LOCALAPPDATA")
                 .map(PathBuf::from)
                 .map_or_else(|| config.clone(), |base| base.join(IDENTIFIER));
-            adopt(&config);
-            adopt(&data);
             move_data(&config, &data);
             Ok(AppDirs { config, data })
         } else {
@@ -87,8 +74,6 @@ impl AppDirs {
                 config: config_base.join(IDENTIFIER),
                 data: data_base.join(IDENTIFIER),
             };
-            adopt(&dirs.config);
-            adopt(&dirs.data);
             Ok(dirs)
         }
     }
@@ -148,73 +133,6 @@ fn move_data(from: &Path, to: &Path) {
             let _ = std::fs::rename(&old, &new);
         }
     }
-}
-
-/// Moves the folder the former identifier named, beside `folder`, to
-/// `folder`, once: the settings, recents, models and the user's own sounds
-/// and voices of every build before the rename, so an update does not
-/// open on an empty app and fetch every model again. Nothing happens when
-/// `folder` exists already or there is nothing to move.
-///
-/// A link is left where the old folder was, to the new one: a project
-/// that took a sound from the Audio page or a saved voice holds its path,
-/// under the old name, and finds it through the link. A symbolic link on
-/// a Mac and on Linux, a directory junction on Windows, which needs no
-/// rights a symbolic link would. A folder that will not move - another
-/// volume, something holding it open - is left where it is, and the app
-/// starts afresh beside it rather than not at all.
-fn adopt(folder: &Path) {
-    let (Some(parent), Some(name)) = (folder.parent(), folder.file_name()) else {
-        return;
-    };
-    if name != IDENTIFIER || folder.exists() {
-        return;
-    }
-    let former = parent.join(FORMER_IDENTIFIER);
-    if !former.is_dir() || former.is_symlink() {
-        return;
-    }
-    if let Err(error) = std::fs::rename(&former, folder) {
-        log::warn!(
-            "could not move {} to {}: {error}",
-            former.display(),
-            folder.display()
-        );
-        return;
-    }
-    if let Err(error) = link(folder, &former) {
-        log::warn!("could not leave a link at {}: {error}", former.display());
-    }
-}
-
-#[cfg(unix)]
-fn link(target: &Path, at: &Path) -> std::io::Result<()> {
-    std::os::unix::fs::symlink(target, at)
-}
-
-#[cfg(windows)]
-fn link(target: &Path, at: &Path) -> std::io::Result<()> {
-    use std::os::windows::process::CommandExt;
-    /// No console window flashing up behind the app's for it.
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let status = std::process::Command::new("cmd")
-        .args(["/C", "mklink", "/J"])
-        .arg(at)
-        .arg(target)
-        .creation_flags(CREATE_NO_WINDOW)
-        .status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(std::io::Error::other(format!(
-            "mklink /J answered {status}"
-        )))
-    }
-}
-
-#[cfg(not(any(unix, windows)))]
-fn link(_target: &Path, _at: &Path) -> std::io::Result<()> {
-    Ok(())
 }
 
 /// Which platform's rule names the directories.
@@ -299,33 +217,6 @@ mod tests {
             .join("Application Support")
             .join(IDENTIFIER);
         assert_eq!((&mac.config, &mac.data), (&support, &support));
-    }
-
-    /// A folder under the former identifier moves to the new name with
-    /// everything in it, once, and its old path still reaches it.
-    #[test]
-    fn the_former_identifiers_folder_is_adopted() {
-        let root = std::env::temp_dir().join(format!("concat-adopt-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&root);
-        let former = root.join(FORMER_IDENTIFIER);
-        std::fs::create_dir_all(former.join("voices")).unwrap();
-        std::fs::write(former.join("settings.json"), b"{}").unwrap();
-        std::fs::write(former.join("voices").join("me.wav"), b"voice").unwrap();
-
-        let folder = root.join(IDENTIFIER);
-        adopt(&folder);
-        assert!(folder.join("settings.json").is_file());
-        assert!(folder.join("voices").join("me.wav").is_file());
-        // A project's path under the old name still finds the file.
-        assert_eq!(
-            std::fs::read(former.join("voices").join("me.wav")).unwrap(),
-            b"voice"
-        );
-
-        // Run again, nothing changes; and a folder already there is left be.
-        adopt(&folder);
-        assert!(folder.join("settings.json").is_file());
-        let _ = std::fs::remove_dir_all(&root);
     }
 
     /// An older layout's models move to the new home once, and the settings
