@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Concat crashed, froze, or did not do what it should
+description: Something in Framecut crashed, froze, or did not do what it should
 labels: ["bug"]
 body:
   - type: markdown
@@ -10,7 +10,7 @@ body:
     id: what
     attributes:
       label: What happened
-      description: What you did, what you expected, and what Concat did instead.
+      description: What you did, what you expected, and what Framecut did instead.
     validations:
       required: true
   - type: textarea
@@ -26,7 +26,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Concat version
+      label: Framecut version
       description: Settings › About. It is also the first line of the log.
       placeholder: "0.2.11"
     validations:
@@ -47,7 +47,7 @@ body:
     attributes:
       label: The log
       description: |
-        Desktop: Settings › About › Show the log opens the folder; drag the newest file in here. If Concat closed by itself, start it again first: the log from the run that died is the one before the newest.
+        Desktop: Settings › About › Show the log opens the folder; drag the newest file in here. If Framecut closed by itself, start it again first: the log from the run that died is the one before the newest.
         Android: Settings › About › Share the log.
         Attach it on github.com: a reply by email drops attachments.
       placeholder: Drag the log file here

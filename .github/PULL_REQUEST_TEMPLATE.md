@@ -1,12 +1,8 @@
-## What does this PR do?
+## What changed?
 
-## How to test
+## How was it tested?
 
-## Checklist
+Describe the steps, platform, and results. For UI changes, include a screenshot or recording. For performance changes, include the workload and timings.
 
-- [ ] `cargo fmt --check` passes
-- [ ] `cargo clippy --all-targets -- -D warnings` passes
-- [ ] `cargo test` passes
-- [ ] `python3 scripts/locales.py` run (if UI text changed)
-- [ ] New source files have a licence header
-- [ ] Every commit is signed off (`git commit -s`), and I have read the [contributing terms](https://github.com/jub0t/Concat/blob/main/CLA.md)
+- [ ] Relevant checks passed.
+- [ ] Third-party material, licenses, and attribution are documented where applicable.

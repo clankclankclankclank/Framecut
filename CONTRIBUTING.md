@@ -1,127 +1,34 @@
-# Contributing to Concat
+# Contributing to Framecut
 
-Thanks for being here. Concat is a video editor that runs entirely on the
-user's machine, and it gets better mostly through people using it hard and
-reporting what broke.
+The fastest way to help is to try a real edit and [report what you find](https://github.com/clankclankclankclank/Framecut/issues/new/choose). Include your OS, GPU, Framecut version or Git commit, and the type of media you used. For a large feature, open an issue with a short description of the workflow and the proposed change.
 
-## The most valuable thing you can do
+## Set up the workspace
 
-Grab a build from the [Releases](https://github.com/jub0t/Concat/releases) page
-and edit a real video with it. Real footage finds what no reading of the
-source does. A good bug report (what you did, what happened, your
-OS, the media you used) is worth more than most patches.
-
-Longer-form discussion lives in
-[the contribution discussion](https://github.com/jub0t/Concat/discussions/3)
-and on [Discord](https://discord.gg/DVuPfpXfqP).
-
-## Before you write code
-
-Open an issue or drop into Discord first for anything beyond a small fix. Large
-areas are already in progress or intentionally deferred, and it is
-no fun to review a big PR that has to be turned down for reasons that were
-invisible from outside.
-
-## Setting up
-
-You will need Rust (see `rust-version` in `src/Cargo.toml`), the FFmpeg
-7+ development libraries (`brew install ffmpeg`; see `src/README.md` for
-Windows and Linux), cmake and a C++ compiler. Then:
+Follow the [macOS build guide](docs/FRAMECUT.md#install-and-run-from-downloads), or see the [engine documentation](src/README.md#build-and-run) for other development setups. The Rust workspace lives under `src/`.
 
 ```sh
-cd src && cargo run -p concat
+cd src
+cargo run --locked --profile quick -p concat
 ```
 
-That is the editor window. Everything - the engine, the host layer and the
-Slint UI - is one Cargo workspace under `src/`.
+## Check a change
 
-## Layout
-
-| Path | What lives there |
-|---|---|
-| `src/crates/` | The engine (core, media, render, effects, export, project), the host layer (`concat-host`, `concat-speech`), the API (`concat-api`, `concat-server`), the CLI, and `concat`, the Slint editor window |
-
-[`src/README.md`](src/README.md) explains how the crates fit together and
-where the sharp edges are. Read it before touching the engine.
-
-## Checks
-
-Run these before opening a PR:
+From `src/`, run the checks for the crates you touched:
 
 ```sh
-cd src && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+cargo fmt --all -- --check
+cargo test --locked -p concat-effects
+cargo test --locked -p concat-render --features gpu --lib plan::tests::
 ```
 
-If you added or changed text the interface shows, also run
-`python3 scripts/locales.py` so the string inventory follows; CI checks it.
-Translations live in one JSON file per language; see
-[`TRANSLATING.md`](TRANSLATING.md).
+GPU effect changes can be checked on a working wgpu backend:
 
-If you added or changed a downloadable model, put it in
-[`models/manifest.toml`](models/manifest.toml) as well as the engine table it
-belongs to, and run `python3 scripts/models.py --check`; CI checks that too.
-A maintainer then runs the *Mirror models* workflow, which fetches the model,
-records its digest in both places and publishes it to the mirror the app
-downloads from.
-
-Write what happens through the `log` facade (`log::info!`, `log::warn!`,
-`log::error!`) rather than to standard output or standard error. Every run
-writes `<app data>/logs/concat-<when>.log`, and a packaged build has no
-terminal for anything that goes anywhere else; `CONCAT_LOG=debug` turns the
-level up. See `src/crates/concat-host/src/logs.rs`.
-
-New source files need a licence header (see below). Match the style of the code
-around you; the engine avoids cleverness on purpose.
-
-## Licensing your contribution
-
-Concat is published under **AGPL-3.0-or-later** ([`LICENSE`](LICENSE)) and
-also licensed on commercial terms by its owner ([`LICENSING.md`](LICENSING.md)).
-
-Contributions come in under the terms in [`CLA.md`](CLA.md): **you license
-your contribution under the MIT No Attribution licence (MIT-0)**. You keep
-your copyright and can use your own work for anything; Concat's owner, and
-anyone else, can use it for anything too, commercial terms included, with no
-credit owed.
-
-Two things are needed before a pull request can be merged:
-
-1. Every commit is signed off, with your real name and a working email:
-
-   ```sh
-   git commit -s -m "your message"
-   ```
-
-2. On your first pull request, a comment from you confirming you have read the
-   terms and agree to them. The pull request asks for it.
-
-### File headers
-
-Every source file starts with:
-
-```rust
-// SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2026 Jareer Abdullah
+```sh
+cargo test --locked -p concat-render --features gpu --lib every_package_probe_holds
 ```
 
-Use this header as it is, and don't add a copyright line of your own.
+Describe how you tested the change in your pull request. Include hardware, test footage characteristics, and before-and-after numbers for performance patches. Include a screenshot or short recording for visible UI changes. If you change translatable UI text, run `python3 scripts/locales.py` from the repository root. [Translation guide](TRANSLATING.md)
 
-### Third-party code
+## Attribution and licensing
 
-If your patch brings in code you did not write, say so in the PR: what it is,
-where it came from, and its licence. It has to be under a permissive licence
-(MIT, BSD, Apache-2.0, zlib, ISC or similar), because Concat's commercial
-builds must be able to carry it too; GPL, AGPL, LGPL and other copyleft code
-cannot be merged. Licence problems are much cheaper to catch before a merge
-than after a release.
-
-## Trademarks
-
-The code is free to fork. The Concat name and logo are not covered by the AGPL
-grant; see [`TRADEMARK.md`](TRADEMARK.md). Forks are welcome; please ship them
-under your own name.
-
-## Conduct
-
-[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) applies to the repo, the Discussions
-and Discord.
+Framecut uses **AGPL-3.0-or-later**. Preserve existing license headers and attribution. If a patch adds third-party material, identify its source and license in the pull request. The upstream Concat contributor terms in [CLA.md](CLA.md) apply when submitting changes to Concat.

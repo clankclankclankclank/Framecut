@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for Concat
+about: Suggest an idea for Framecut
 title: ''
 labels: ''
 assignees: ''
