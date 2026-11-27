@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.spring-hit"
+name = "Spring Hit"
+kind = "effect"
+category = "Shake"
+order = 169
+description = "Add a directional camera jolt that rings down to a clean frame."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 56
+step = 1
+unit = "%"
+
+[[param]]
+key = "length"
+label = "Settle Time"
+min = 0.15
+max = 2
+default = 0.65
+step = 0.01
+unit = "s"
+
+[[param]]
+key = "direction"
+label = "Direction"
+min = -180
+max = 180
+default = -25
+step = 1
+unit = "°"
+
+[[param]]
+key = "frequency"
+label = "Ringing"
+min = 1
+max = 12
+default = 5
+step = 0.1
+unit = "Hz"
+
+[wgsl]
+entry = "effect.wgsl"

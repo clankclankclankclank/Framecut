@@ -295,3 +295,6 @@ https://unsplash.com/photos/2v921tlqdXE), used under the Unsplash License. The s
 and is embedded in the app; each card is the effect's own shader run over
 it on the GPU when the app first needs the card (`concat-host`'s
 `cards.rs`).
+
+Framecut also uses this photograph and the Metal-rendered effect stills in its
+comparison gallery under `site/media/`.

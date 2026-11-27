@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.prism-fringe"
+name = "Prism Fringe"
+kind = "effect"
+category = "Distort"
+order = 155
+description = "Separate red and blue near the frame edges with independent focus and falloff."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 42
+step = 1
+unit = "%"
+
+[[param]]
+key = "focus"
+label = "Focus"
+min = 0
+max = 90
+default = 30
+step = 1
+unit = "%"
+
+[[param]]
+key = "angle"
+label = "Angle"
+min = -180
+max = 180
+default = 0
+step = 1
+unit = "°"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { amount = 90 }

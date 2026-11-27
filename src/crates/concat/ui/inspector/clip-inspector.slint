@@ -392,9 +392,10 @@ export component PresetStack inherits VerticalLayout {
                     border-radius: Theme.r;
                     background: Theme.raised;
                     border-width: 1px;
-                    border-color: head-touch.has-hover ? Theme.line-strong : Theme.line;
+                    border-color: link.open && item.on ? Theme.accent.with-alpha(0.40)
+                        : head-touch.has-hover ? Theme.line-strong : Theme.line;
 
-                    animate border-color { duration: 120ms; }
+                    animate border-color { duration: 150ms; easing: ease-out; }
 
                     VerticalLayout {
                         padding-bottom: link.open ? 10px : 0px;

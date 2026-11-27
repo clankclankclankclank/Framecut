@@ -174,17 +174,16 @@ impl Track {
         if x <= first.at {
             return first.value;
         }
-        for pair in self.keys.windows(2) {
-            let (a, b) = (pair[0], pair[1]);
-            if x <= b.at {
-                if b.at <= a.at {
-                    return b.value;
-                }
-                let t = b.ease.apply((x - a.at) / (b.at - a.at));
-                return a.value + (b.value - a.value) * t;
-            }
+        if x.is_nan() {
+            return self.keys[self.keys.len() - 1].value;
         }
-        self.keys[self.keys.len() - 1].value
+        let right = self.keys.partition_point(|key| key.at < x);
+        let Some(&b) = self.keys.get(right) else {
+            return self.keys[self.keys.len() - 1].value;
+        };
+        let a = self.keys[right - 1];
+        let t = b.ease.apply((x - a.at) / (b.at - a.at));
+        a.value + (b.value - a.value) * t
     }
 
     /// The same ride, with every eased segment replaced by `steps` straight

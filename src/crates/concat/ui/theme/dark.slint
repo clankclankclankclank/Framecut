@@ -79,12 +79,12 @@ export global Dark {
     // separating a pane from the ground; without one the value step has to do
     // all of it, and a darker ladder leaves the panes reading as holes in the
     // window rather than as surfaces on it.
-    out property <color> panel: #212123;
-    out property <color> raised: #2b2b2e;
-    out property <color> well: #19191b;
-    out property <color> field: #323235;
-    out property <color> field-hover: #3b3b3e;
-    out property <color> field-active: #46464a;
+    out property <color> panel: #1a1c29;
+    out property <color> raised: #232637;
+    out property <color> well: #141622;
+    out property <color> field: #2b2e42;
+    out property <color> field-hover: #353950;
+    out property <color> field-active: #41465e;
 
     // the launch screen's own ladder — a deeper cut of the one above
     //
@@ -100,12 +100,12 @@ export global Dark {
     // reads: `launch-well` is sunken under the card, `launch-raised` is the
     // lift a hover gives, `launch-field` is a chip that is the answer. Only
     // the whole ladder has moved down.
-    out property <color> launch-page: #0e0e10;
-    out property <color> launch-panel: #161619;
-    out property <color> launch-well: #101013;
-    out property <color> launch-raised: #1e1e22;
-    out property <color> launch-field: #26262b;
-    out property <color> launch-field-active: #313138;
+    out property <color> launch-page: #10111a;
+    out property <color> launch-panel: #1a1c29;
+    out property <color> launch-well: #141622;
+    out property <color> launch-raised: #232637;
+    out property <color> launch-field: #2b2e42;
+    out property <color> launch-field-active: #353950;
 
     // hairlines — white-alpha, so they hold on panel, well, and ground alike.
     out property <color> line: #ffffff1a;         // rgb(255 255 255 / 0.1)
@@ -113,8 +113,8 @@ export global Dark {
 
     // text
     out property <color> fg: #f5f5f7;
-    out property <color> fg-muted: #a1a1a6;
-    out property <color> fg-dim: #6e6e73;
+    out property <color> fg-muted: #b0b4c7;
+    out property <color> fg-dim: #848aa5;
     // One step past `fg`, away from the ground: pure white here, pure black
     // on the light palette. For the one button whose fill *is* the ink —
     // the launch screen's Create — where hover has to mean more contrast
@@ -126,8 +126,7 @@ export global Dark {
     // The two places that carry the look are the selection highlight and
     // every activated tool, and both are the accent.
     //
-    // Six to choose from, and Settings › Appearance picks one. The first,
-    // lime, is the default. Each is legible against near-black and
+    // Six to choose from, and Settings › Appearance picks one. The first is the default. Each is legible against near-black and
     // near-white alike, which is what a selection has to be: it lands on
     // whatever happens to be underneath it. What sits *on* them therefore
     // has to be dark ink, and is fixed with it: `on` is a deep shade of the
@@ -136,7 +135,7 @@ export global Dark {
     // The same order as `light.slint` and as `accent-names` in theme.slint,
     // which is where each one's name lives.
     out property <[Accent]> accents: [
-        { accent: #cbf53f, hover: #d9ff63, soft: #cbf53f33, on: #15220a },   // lime
+        { accent: #f8d662, hover: #ffe796, soft: #f8d66233, on: #251d08 },   // gold
         { accent: #5fb8ff, hover: #82c9ff, soft: #5fb8ff33, on: #061c33 },   // sky
         { accent: #b394ff, hover: #c6b0ff, soft: #b394ff33, on: #1d0f3d },   // violet
         { accent: #ff6fa3, hover: #ff8fb8, soft: #ff6fa333, on: #38091c },   // rose
@@ -176,8 +175,8 @@ export global Dark {
     // header strip of every clip and the ground of every card's badge, and
     // at full chroma a stack of eight tracks shouts. Darker, they still say
     // the kind and let the white ink on them read.
-    out property <color> kind-video: #3373d1;
-    out property <color> kind-video-well: #142238;
+    out property <color> kind-video: #516dc7;
+    out property <color> kind-video-well: #202a56;
     // Green, and a step off the lime accent so a selected sound clip still
     // reads as selected; the waveform below is a wash of this hue.
     out property <color> kind-audio: #34c46f;
@@ -198,8 +197,8 @@ export global Dark {
     // an effect coral, something happening to the picture; an adjustment
     // layer fuchsia, a grade and not a look, and clear of the video's blue
     // it is stacked over; a transition lime, a join between shots.
-    out property <color> kind-effect: #f2674f;
-    out property <color> kind-effect-well: #3d1913;
+    out property <color> kind-effect: #da7d99;
+    out property <color> kind-effect-well: #462b42;
     out property <color> kind-adjustment: #d153e0;
     out property <color> kind-adjustment-well: #36173b;
     out property <color> kind-transition: #8fc23a;
@@ -234,25 +233,25 @@ export global Dark {
     // still reads as a well cut into the pane, and a clip's own dark ground
     // now sits *on* something rather than floating in a hole. Both stay well
     // under `panel`, or the empty stretches would read as content.
-    out property <color> lane: #1a1a1c;
-    out property <color> lane-alt: #1e1e20;
+    out property <color> lane: #171926;
+    out property <color> lane-alt: #1c1f2e;
     // The ruler is its own surface, not the first row of the stack: a step
     // under the darker lane, so the strip carrying the timestamps reads as
     // the floor of the pane and the banding starts below it. It followed
     // `raised` before, which put it above the panel and made it the brightest
     // thing in the pane — the opposite of what a ruler should be.
-    out property <color> ruler: #171719;
+    out property <color> ruler: #171927;
     /// The vertical rules. 6% white was set against a lane that was still a
     /// dark grey, and all but vanished when the lanes went black — a grid that
     /// costs elements and reads as nothing. 14% clears both of the tones the
     /// lanes now carry while staying under `line-strong`, so the rules place a
     /// clip without competing with it.
-    out property <color> grid: #ffffff24;
+    out property <color> grid: #bec8ee19;
     // Lime: the palette's second accent, as a colour of its own rather than
     // a read of the accent, so a change of accent leaves the playhead where the
     // eye learnt to find it. Settings > Appearance can put any colour in its
     // place (theme.slint, `playhead-custom`).
-    out property <color> playhead: #cbf53f;
+    out property <color> playhead: #f8d662;
     // Drawn on the audio clip's own dark ground, so it is a light wash of the
     // kind's hue rather than the vivid mark itself.
     out property <color> wave: #a7f0c2b3;      // 0.7 alpha
@@ -329,6 +328,6 @@ export global Dark {
 
     // window ground the panes float on — a shade under the darkest panel so
     // the gutters read as gaps and not as seams
-    out property <color> page: #151517;
-    out property <color> page-fg-muted: #a1a1a6;
+    out property <color> page: #10111a;
+    out property <color> page-fg-muted: #b0b4c7;
 }

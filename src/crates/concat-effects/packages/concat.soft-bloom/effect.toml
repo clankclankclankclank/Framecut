@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.soft-bloom"
+name = "Soft Bloom"
+kind = "effect"
+category = "Light"
+order = 131
+description = "Spread highlight colour through a soft two-axis glow."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 55
+step = 1
+unit = "%"
+
+[[param]]
+key = "threshold"
+label = "Threshold"
+min = 0
+max = 100
+default = 65
+step = 1
+unit = "%"
+
+[[param]]
+key = "radius"
+label = "Radius"
+min = 1
+max = 120
+default = 36
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[[wgsl.pass]]
+target = "extract"
+shrink = ["4", "4"]
+
+[[wgsl.pass]]
+target = "horizontal"
+shrink = ["4", "4"]
+
+[[wgsl.pass]]
+target = "vertical"
+shrink = ["4", "4"]
+
+[card]
+params = { amount = 95, threshold = 50 }

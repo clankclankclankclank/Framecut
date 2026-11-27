@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+[[probe]]
+name = "Opening frame is outgoing"
+input = [0.1, 0.2, 0.3, 1]
+to = [0.8, 0.6, 0.4, 1]
+progress = 0
+expect = [0.1, 0.2, 0.3, 1]
+
+[[probe]]
+name = "Closing frame is incoming"
+input = [0.1, 0.2, 0.3, 1]
+to = [0.8, 0.6, 0.4, 1]
+progress = 1
+expect = [0.8, 0.6, 0.4, 1]

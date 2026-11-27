@@ -8,9 +8,9 @@
 //! package the app knows, findable by id or alias, and it is what turns a
 //! clip's applied effects into one FFmpeg chain.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use crate::applied::{AppliedFilter, ParamKey};
 use serde::Deserialize;
@@ -941,11 +941,64 @@ fn check_names(expr: &Expr, known: &[String]) -> Result<(), String> {
 /// The catalogue every caller reads; see `Catalogue::builtin`.
 static CURRENT: RwLock<Option<&'static Catalogue>> = RwLock::new(None);
 
+/// Resolved uniforms for static effects. Entries survive preview plan rebuilds
+/// and are independent of clip placement, source frames and the shader clock.
+#[derive(Debug, Default)]
+struct PassCache(Mutex<VecDeque<CachedPass>>);
+
+#[derive(Debug)]
+struct CachedPass {
+    params: BTreeMap<String, f64>,
+    pass: ShaderPass,
+}
+
+impl Clone for PassCache {
+    fn clone(&self) -> Self {
+        // A derived catalogue can grow a different set of packages.
+        Self::default()
+    }
+}
+
+impl PassCache {
+    fn resolve(&self, package: &Package, params: &BTreeMap<String, f64>) -> Option<ShaderPass> {
+        const MAX_PASSES: usize = 96;
+        if params.len() > 32 {
+            return package.pass(params, None);
+        }
+        let mut entries = self.0.lock().expect("effect pass cache");
+        let hit = entries.iter().position(|entry| {
+            entry.pass.package == package.id()
+                && entry.params.len() == params.len()
+                && entry
+                    .params
+                    .iter()
+                    .zip(params)
+                    .all(|((a, x), (b, y))| a == b && x.to_bits() == y.to_bits())
+        });
+        if let Some(hit) = hit {
+            let entry = entries.remove(hit).expect("cache position");
+            let pass = entry.pass.clone();
+            entries.push_front(entry);
+            return Some(pass);
+        }
+        drop(entries);
+        let pass = package.pass(params, None)?;
+        let mut entries = self.0.lock().expect("effect pass cache");
+        entries.push_front(CachedPass {
+            params: params.clone(),
+            pass: pass.clone(),
+        });
+        entries.truncate(MAX_PASSES);
+        Some(pass)
+    }
+}
+
 /// Every package the app knows.
 #[derive(Clone, Debug, Default)]
 pub struct Catalogue {
     packages: Vec<Package>,
     by_id: HashMap<String, usize>,
+    pass_cache: PassCache,
 }
 
 impl Catalogue {
@@ -1223,7 +1276,19 @@ impl Catalogue {
         at: f64,
         reveal_map: Option<Arc<RevealMap>>,
     ) -> Vec<ShaderPass> {
-        self.passes_with(effects, |applied| applied.params_at(at), reveal_map)
+        effects
+            .iter()
+            .filter(|applied| applied.enabled)
+            .filter_map(|applied| {
+                let package = self.get(&applied.id)?;
+                if applied.keys.values().any(|keys| !keys.is_empty()) {
+                    return package.pass(&applied.params_at(at), reveal_map.clone());
+                }
+                let mut pass = self.pass_cache.resolve(package, &applied.params)?;
+                pass.reveal_map.clone_from(&reveal_map);
+                Some(pass)
+            })
+            .collect()
     }
 
     /// The two-input pass for a transition package at `progress` in `0..=1`,

@@ -55,7 +55,7 @@ use concat_media::audio::{self, AudioClip};
 use concat_media::{DecodeOptions, EncodeOptions, Encoder, FrameSink, RateMode, VideoCodec};
 use concat_render::{
     Compositor, CpuCompositor, Drawn, FramePlan, PlannedLayer, PlannedTreatment, Transition,
-    WgpuCompositor, plan_frame,
+    WgpuCompositor,
 };
 use concat_vision::{Mapping, MaskStore};
 use serde::Deserialize;
@@ -1993,6 +1993,7 @@ fn render_picture(
     let mut compositor = Held(Some(Drawer::Gpu(Box::new(gpu))));
     let BuiltTimeline {
         timeline,
+        frame_index,
         stills,
         decode_sizes,
         tracks,
@@ -2148,11 +2149,11 @@ fn render_picture(
 
             let reading = std::time::Instant::now();
             let time = rate.time_of_frame(index);
-            let plan = plan_frame(&timeline, time);
+            let plan = frame_index.frame(&timeline, time);
             feeds.look_ahead(
                 index,
                 total_frames,
-                |ahead| plan_frame(&timeline, rate.time_of_frame(ahead)),
+                |ahead| frame_index.frame(&timeline, rate.time_of_frame(ahead)),
                 paced,
             )?;
 
@@ -3468,6 +3469,7 @@ pub fn preview_sources_of(
     let rate = plan.rate;
     let BuiltTimeline {
         timeline,
+        frame_index,
         stills,
         decode_sizes,
         tracks,
@@ -3485,7 +3487,7 @@ pub fn preview_sources_of(
     } = &plan.built;
     let highlight = *highlight;
     let time = quantise(seconds, rate);
-    let plan_at = plan_frame(timeline, time);
+    let plan_at = frame_index.frame(timeline, time);
 
     let mut layers: Vec<PlannedLayer> = Vec::with_capacity(plan_at.layers.len());
     let mut failures: Vec<String> = Vec::new();
@@ -3715,6 +3717,7 @@ pub fn preview_moments(
     let rate = plan.rate;
     let BuiltTimeline {
         timeline,
+        frame_index,
         stills,
         decode_sizes,
         ..
@@ -3723,7 +3726,7 @@ pub fn preview_moments(
     (1..=frames)
         .map(|ahead| {
             let time = seconds + f64::from(ahead) / fps;
-            let plan_at = plan_frame(timeline, quantise(time, rate));
+            let plan_at = frame_index.frame(timeline, quantise(time, rate));
             concat_media::Moment {
                 time,
                 frames: plan_at
@@ -4615,6 +4618,109 @@ mod tests {
                 "at ({x}, {y}) the monitor shows {got:?}, not {want:?}"
             );
         }
+    }
+
+    #[cfg(feature = "gpu")]
+    #[test]
+    fn a_keyed_grade_tracks_preview_through_prores_export() {
+        use concat_effects::ParamKey;
+        use concat_media::decode::{Decoder, FrameSource};
+
+        let dir = std::env::temp_dir().join(format!("framecut-grade-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("scratch directory");
+        let input = dir.join("red.ppm");
+        let mut pixels = b"P6\n64 64\n255\n".to_vec();
+        pixels.extend([200_u8, 40, 40].repeat(64 * 64));
+        std::fs::write(&input, pixels).expect("writes a red plate");
+        let mut picture = ExportClip::blank(ClipKind::Image, 0.0, 1.0, 0);
+        picture.path = input.to_string_lossy().into_owned();
+        picture.media_width = Some(64);
+        picture.media_height = Some(64);
+        let mut grade = AppliedFilter::new("concat.dusk-grade");
+        grade.params = [("saturation".to_owned(), 0.0), ("warmth".to_owned(), 0.0)].into();
+        grade.keys.insert(
+            "amount".to_owned(),
+            vec![
+                ParamKey {
+                    at: 0.0,
+                    value: 0.0,
+                    ease: AnimEase::LINEAR,
+                },
+                ParamKey {
+                    at: 0.7,
+                    value: 100.0,
+                    ease: AnimEase::LINEAR,
+                },
+            ],
+        );
+        picture.effects.push(grade);
+
+        let plan = preview_plan(
+            &[picture.clone()],
+            64,
+            64,
+            30,
+            1,
+            ColorSpace::Sdr,
+            opaque_black(),
+        );
+        let pool = concat_media::ReaderPool::new(8 * 1024 * 1024, 1);
+        let rgba_at = |seconds| {
+            let sources = preview_sources_of(&pool, &plan, seconds, false, false).expect("sources");
+            sources.pixels(true).expect("GPU preview")
+        };
+        let centre = (32 * 64 + 32) * 4;
+        let previews = [rgba_at(0.0), rgba_at(0.8)];
+        assert!(previews[0][centre].saturating_sub(previews[0][centre + 1]) >= 90);
+        assert!(previews[1][centre].abs_diff(previews[1][centre + 1]) <= 4);
+
+        let output = dir.join("grade.mov");
+        let request = ExportRequest {
+            output: output.to_string_lossy().into_owned(),
+            width: 64,
+            height: 64,
+            rate_num: 30,
+            rate_den: 1,
+            crf: 18,
+            preset: "medium".to_owned(),
+            codec: VideoCodec::ProRes4444,
+            ten_bit: false,
+            rate_mode: Default::default(),
+            bitrate_kbps: 0,
+            color_range: Default::default(),
+            color_space: ColorSpace::Sdr,
+            hdr: false,
+            effect_time_offset: 0.0,
+            canvas: opaque_black(),
+            clips: vec![picture],
+            resume: None,
+        };
+        render(
+            &request,
+            Reporter {
+                progress: &mut |_, _, _| {},
+                cancel: &AtomicBool::new(false),
+            },
+        )
+        .expect("renders keyed grade");
+        let mut decoder =
+            Decoder::open(&output, &DecodeOptions::default().in_software()).expect("opens output");
+        for frame in 0..=24 {
+            let output = decoder.next_frame().expect("decodes").expect("a frame");
+            if frame == 0 || frame == 24 {
+                let preview = &previews[usize::from(frame == 24)][centre..centre + 4];
+                let actual = output.pixel(32, 32).expect("centre pixel");
+                assert!(
+                    actual
+                        .iter()
+                        .zip(preview)
+                        .all(|(&a, &b)| a.abs_diff(b) <= 12),
+                    "frame {frame}: export {actual:?}, preview {preview:?}"
+                );
+            }
+        }
+        drop(decoder);
+        std::fs::remove_dir_all(dir).expect("removes scratch directory");
     }
 
     /// End to end against a real FFmpeg: the paused monitor's frame must show
@@ -5789,7 +5895,9 @@ mod tests {
                 let timeline = &plan.built.timeline;
                 let first = (start * 30.0).round() as i64;
                 for index in first..timeline.frame_count() {
-                    let layers = plan_frame(timeline, rate.time_of_frame(index)).layers.len();
+                    let layers = concat_render::plan_frame(timeline, rate.time_of_frame(index))
+                        .layers
+                        .len();
                     assert_eq!(
                         layers, 1,
                         "start {start}, cut {at}: frame {index} has {layers} pictures"

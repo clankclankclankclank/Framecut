@@ -135,6 +135,7 @@ impl StabilizeJob {
 /// engine's model has no field for.
 pub(crate) struct BuiltTimeline {
     pub(crate) timeline: Timeline,
+    pub(crate) frame_index: concat_render::plan::FrameIndex,
     /// Clips that are stills: one-frame streams, decoded looping.
     pub(crate) stills: std::collections::HashSet<ClipId>,
     /// Contain-fitted decode size per clip, where the source's size is known.
@@ -416,6 +417,7 @@ pub(crate) fn build_timeline(
     }
 
     BuiltTimeline {
+        frame_index: concat_render::plan::FrameIndex::new(&timeline),
         timeline,
         stills,
         decode_sizes,

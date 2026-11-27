@@ -970,13 +970,15 @@ component CatalogueCard inherits Rectangle {
                 y: 0;
                 height: root.compact ? root.height : root.width;
                 border-radius: Theme.r;
-                background: root.compact && card.has-hover && root.item.enabled
-                    ? Theme.field : Theme.well;
+                background: card.has-hover && root.item.enabled
+                    ? Theme.raised : Theme.well;
                 border-width: root.auditioning ? 2px : 1px;
                 border-color: root.auditioning ? Theme.accent
                     : (card.has-hover && root.item.enabled)
                     ? Theme.line-strong : Theme.line;
                 clip: true;
+
+                animate background, border-color { duration: 150ms; easing: ease-out; }
 
                 if root.item.art.width > 0: Image {
                     x: 0;

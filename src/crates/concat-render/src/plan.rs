@@ -22,6 +22,7 @@
 //! meets what is beneath. The geometry and the weighing are worked out
 //! here, once, so the two backends cannot drift on them.
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -901,21 +902,93 @@ pub fn detached_clip() -> ClipId {
         .expect("the track was just added")
 }
 
+/// Clip occupancy for an immutable render timeline. Each lane contains only
+/// the boundaries at which its winning clip changes.
+#[derive(Debug)]
+pub struct FrameIndex {
+    lanes: Vec<Vec<(Rational, Option<ClipId>)>>,
+}
+
+impl FrameIndex {
+    /// Index a snapshot once, then use it with that same snapshot.
+    pub fn new(timeline: &Timeline) -> Self {
+        let lanes = timeline
+            .tracks()
+            .map(|(_, lane)| {
+                if !lane.enabled || lane.kind != TrackKind::Video {
+                    return Vec::new();
+                }
+                let mut edges = Vec::new();
+                for (order, &id) in lane.clips().iter().enumerate() {
+                    let Some(clip) = timeline.clip(id) else {
+                        continue;
+                    };
+                    let end = clip.range().end();
+                    if clip.start < end {
+                        edges.push((clip.start, true, order));
+                        edges.push((end, false, order));
+                    }
+                }
+                edges.sort_unstable();
+                let mut active = BTreeSet::new();
+                let mut spans = Vec::new();
+                let mut winner = None;
+                for group in edges.chunk_by(|a, b| a.0 == b.0) {
+                    for &(_, starts, order) in group {
+                        if starts {
+                            active.insert(order);
+                        } else {
+                            active.remove(&order);
+                        }
+                    }
+                    // Preserve Timeline's last-added winner on overlaps.
+                    let next = active.last().map(|&order| lane.clips()[order]);
+                    if winner != next {
+                        spans.push((group[0].0, next));
+                        winner = next;
+                    }
+                }
+                spans
+            })
+            .collect();
+        Self { lanes }
+    }
+
+    /// Plan a frame against the immutable snapshot used to build this index.
+    pub fn frame(&self, timeline: &Timeline, time: Rational) -> FramePlan {
+        let clips = self.lanes.iter().enumerate().filter_map(|(track, spans)| {
+            let end = spans.partition_point(|&(start, _)| start <= time);
+            Some((track, spans.get(end.checked_sub(1)?)?.1?))
+        });
+        plan_layers(timeline, time, clips)
+    }
+}
+
 /// Works out what is on screen at `time`.
 ///
 /// Audio tracks and disabled tracks are skipped. A track with no clip under the
 /// playhead simply contributes nothing. Every layer comes back with no
 /// picture, no effects and no mask: those are the executor's to fill in.
 pub fn plan_frame(timeline: &Timeline, time: Rational) -> FramePlan {
-    let mut layers = Vec::new();
+    let clips = timeline
+        .tracks()
+        .enumerate()
+        .filter_map(|(track, (id, lane))| {
+            if !lane.enabled || lane.kind != TrackKind::Video {
+                return None;
+            }
+            Some((track, timeline.clip_on_track_at(id, time)?))
+        });
+    plan_layers(timeline, time, clips)
+}
 
-    for (track, (track_id, lane)) in timeline.tracks().enumerate() {
-        if !lane.enabled || lane.kind != TrackKind::Video {
-            continue;
-        }
-        let Some(clip_id) = timeline.clip_on_track_at(track_id, time) else {
-            continue;
-        };
+fn plan_layers(
+    timeline: &Timeline,
+    time: Rational,
+    clips: impl Iterator<Item = (usize, ClipId)>,
+) -> FramePlan {
+    let mut layers = Vec::new();
+    for (track, clip_id) in clips {
         let Some(clip) = timeline.clip(clip_id) else {
             continue;
         };
@@ -969,6 +1042,39 @@ mod tests {
 
     fn seconds(value: i64) -> Rational {
         Rational::from_int(value)
+    }
+
+    #[test]
+    fn indexed_frames_match_the_unindexed_planner_on_overlaps_and_gaps() {
+        let mut timeline = Timeline::hd();
+        let lane = timeline.add_track(Track::new("video", TrackKind::Video));
+        let next = timeline.add_track(Track::new("overlay", TrackKind::Video));
+        for (track, start, duration) in [
+            (lane, 1, 8),
+            (lane, 3, 2),
+            (lane, 5, 1),
+            (lane, 11, 1),
+            (next, 3, 3),
+        ] {
+            timeline.add_clip(
+                track,
+                Clip::new(MediaRef::new("test"), seconds(start), seconds(duration)),
+            );
+        }
+        let index = FrameIndex::new(&timeline);
+        let active = |plan: FramePlan| {
+            plan.layers
+                .into_iter()
+                .map(|layer| (layer.track, layer.clip, layer.source_time))
+                .collect::<Vec<_>>()
+        };
+        for frame in -1..360 {
+            let time = FrameRate::THIRTY.time_of_frame(frame);
+            assert_eq!(
+                active(index.frame(&timeline, time)),
+                active(plan_frame(&timeline, time))
+            );
+        }
     }
 
     #[test]

@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.silver-grain"
+name = "Silver Grain"
+kind = "effect"
+category = "Film"
+order = 161
+description = "Add time-locked film grain with stronger texture in the midtones."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 28
+step = 1
+unit = "%"
+
+[[param]]
+key = "size"
+label = "Size"
+min = 1
+max = 8
+default = 2
+step = 0.1
+unit = "px"
+
+[[param]]
+key = "cadence"
+label = "Cadence"
+min = 1
+max = 60
+default = 24
+step = 1
+unit = "fps"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { amount = 75 }

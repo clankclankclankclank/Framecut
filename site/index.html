@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Framecut is an open-source desktop video editor and independent fork of Concat.">
+  <meta name="theme-color" content="#10111a">
+  <title>Framecut — Open-source video editing</title>
+  <link rel="icon" href="media/framecut.png">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <nav class="wrap navigation" aria-label="Main navigation">
+      <a href="#" class="wordmark"><span class="mark" aria-hidden="true"></span>Framecut</a>
+      <div class="nav-links"><a href="#effects">Effects</a><a href="#build">Build guide</a></div>
+      <a class="source-link" href="https://github.com/clankclankclankclank/Concat/tree/framecut">Source code</a>
+    </nav>
+  </header>
+  <main id="main" class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <div class="intro">
+        <p class="eyebrow"><span></span> OPEN-SOURCE VIDEO EDITOR</p>
+        <h1 id="title">Make every <em>frame</em> count.</h1>
+        <p class="lede">Cut on a multitrack timeline, shape the light with GPU effects, and animate the details. Framecut is an independent desktop fork of Concat, built in Rust.</p>
+        <div class="actions">
+          <a class="button primary" href="#build">Build on macOS</a>
+          <a class="button secondary" href="#effects">Explore effects</a>
+        </div>
+        <p class="platforms">Apple Silicon &amp; Intel · AGPL-3.0-or-later</p>
+      </div>
+      <figure class="monitor" aria-label="GPU-rendered effect comparison">
+        <div class="monitor-top"><span><i></i> EFFECT PREVIEW</span><span id="active-effect">DUSK GRADE</span></div>
+        <div class="comparison" id="comparison">
+          <img class="original" src="media/source.jpg" alt="A portrait of a person with orange hair beneath yellow rails">
+          <img class="processed" id="processed" src="media/dusk-grade.jpg" alt="Dusk Grade applied to the portrait">
+          <div class="divider" aria-hidden="true"><span>‹ ›</span></div>
+          <span class="frame-label left">GPU RENDER</span><span class="frame-label right">SOURCE</span>
+        </div>
+        <div class="monitor-bottom">
+          <label for="reveal">Compare</label>
+          <input type="range" id="reveal" min="0" max="100" value="57" aria-describedby="compare-help">
+          <span id="compare-help">Drag to reveal</span>
+        </div>
+      </figure>
+    </section>
+
+    <section id="effects" class="section effects" aria-labelledby="effects-title">
+      <div class="section-head">
+        <div><p class="eyebrow">EFFECT LIBRARY</p><h2 id="effects-title">Find the look.</h2></div>
+        <p>Choose a still rendered by the editor’s WGSL pipeline and compare it with the source above. In the editor, each effect has its own controls and keyframes.</p>
+      </div>
+      <div id="effect-options" class="effect-grid" aria-label="Choose an effect to compare">
+        <button type="button" data-effect="dusk-grade" aria-pressed="true"><img loading="lazy" src="media/dusk-grade.jpg" alt=""><span><strong>Dusk Grade</strong><small>Color</small></span></button>
+        <button type="button" data-effect="soft-bloom" aria-pressed="false"><img loading="lazy" src="media/soft-bloom.jpg" alt=""><span><strong>Soft Bloom</strong><small>Light</small></span></button>
+        <button type="button" data-effect="prism-fringe" aria-pressed="false"><img loading="lazy" src="media/prism-fringe.jpg" alt=""><span><strong>Prism Fringe</strong><small>Distort</small></span></button>
+        <button type="button" data-effect="orbital-blur" aria-pressed="false"><img loading="lazy" src="media/orbital-blur.jpg" alt=""><span><strong>Orbital Blur</strong><small>Blur</small></span></button>
+        <button type="button" data-effect="screen-print" aria-pressed="false"><img loading="lazy" src="media/screen-print.jpg" alt=""><span><strong>Screen Print</strong><small>Texture</small></span></button>
+        <button type="button" data-effect="tube-monitor" aria-pressed="false"><img loading="lazy" src="media/tube-monitor.jpg" alt=""><span><strong>Tube Monitor</strong><small>Retro</small></span></button>
+      </div>
+      <a class="text-link" href="#comparison">Back to the comparison</a>
+    </section>
+
+    <section class="section workflow" aria-labelledby="workflow-title">
+      <div><p class="eyebrow">THE EDITOR</p><h2 id="workflow-title">From rough cut to export.</h2></div>
+      <div class="details">
+        <article><h3>Work across tracks</h3><p>Trim and stack footage, titles, audio and adjustment layers. Proxy files make it easier to scrub demanding sources.</p></article>
+        <article><h3>Animate in the inspector</h3><p>Apply an effect from the library, open its controls, then use the keyframe buttons at different playhead positions.</p></article>
+        <article><h3>Keep the look through export</h3><p>Preview and export use the same effect packages. Hardware encoders, including VideoToolbox on supported Macs, are selected when available.</p></article>
+      </div>
+    </section>
+
+    <section id="build" class="section build" aria-labelledby="build-title">
+      <div>
+        <p class="eyebrow">MACOS BUILD GUIDE</p>
+        <h2 id="build-title">Run it locally.</h2>
+        <p>Download the source ZIP to Downloads. Open the ZIP, then run the launcher inside the extracted folder. The first build downloads Cargo dependencies and native libraries.</p>
+        <a class="button primary" href="https://github.com/clankclankclankclank/Concat/archive/refs/heads/framecut.zip">Download source ZIP</a>
+        <a class="text-link" href="https://github.com/clankclankclankclank/Concat/blob/framecut/docs/FRAMECUT.md">Read the full build guide</a>
+      </div>
+      <div class="terminal">
+        <div class="terminal-top"><span>Terminal · macOS</span><button id="copy" type="button">Copy commands</button></div>
+        <pre id="commands"><code>xcode-select --install
+brew install rustup cmake pkgconf ffmpeg
+cd ~/Downloads
+unzip Concat-framecut.zip
+cd Concat-framecut
+bash build_and_run_macos.sh --workspace "$PWD"</code></pre>
+        <p id="copy-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+  <footer class="wrap footer">
+    <a href="#" class="wordmark"><span class="mark" aria-hidden="true"></span>Framecut</a>
+    <p>Independent fork of <a href="https://github.com/jub0t/Concat">Concat</a> · <a href="https://github.com/clankclankclankclank/Concat/blob/framecut/LICENSE">AGPL-3.0-or-later</a></p>
+    <a href="https://unsplash.com/photos/2v921tlqdXE">Photograph by Sou Jest</a>
+  </footer>
+</body>
+</html>

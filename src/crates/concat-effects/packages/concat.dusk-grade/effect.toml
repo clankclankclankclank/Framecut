@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.dusk-grade"
+name = "Dusk Grade"
+kind = "effect"
+category = "Color"
+order = 171
+description = "Separate cool shadows and warm highlights with a controllable tonal pivot."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 70
+step = 1
+unit = "%"
+
+[[param]]
+key = "pivot"
+label = "Pivot"
+min = 10
+max = 90
+default = 48
+step = 1
+unit = "%"
+
+[[param]]
+key = "warmth"
+label = "Warmth"
+min = -100
+max = 100
+default = 40
+step = 1
+unit = "%"
+
+[[param]]
+key = "saturation"
+label = "Saturation"
+min = 0
+max = 200
+default = 92
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { warmth = 95 }

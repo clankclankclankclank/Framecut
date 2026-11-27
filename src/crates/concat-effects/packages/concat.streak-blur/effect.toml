@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.streak-blur"
+name = "Streak Blur"
+kind = "effect"
+category = "Blur"
+order = 151
+description = "Stretch motion along an angle while keeping transparent edges clean."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 35
+step = 1
+unit = "%"
+
+[[param]]
+key = "angle"
+label = "Angle"
+min = -180
+max = 180
+default = 30
+step = 1
+unit = "°"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { amount = 70 }

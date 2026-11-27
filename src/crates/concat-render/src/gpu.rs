@@ -1024,6 +1024,7 @@ struct Draw {
 /// same size.
 struct PooledTexture {
     texture: wgpu::Texture,
+    view: wgpu::TextureView,
     bind_group: wgpu::BindGroup,
     /// The identity of the frame uploaded into it, or zero for a texture
     /// a pass drew: what lets a frame the device already holds - a still,
@@ -3525,6 +3526,7 @@ impl WgpuCompositor {
             });
             pool.push(PooledTexture {
                 texture,
+                view,
                 bind_group,
                 holds: 0,
                 drawn: 0,
@@ -4090,16 +4092,15 @@ impl WgpuCompositor {
                 time - clip_start,
                 0.0,
             ];
-            let frame_bytes: Vec<u8> = frame_block.iter().flat_map(|v| v.to_le_bytes()).collect();
-            self.queue.write_buffer(&shader.frame, 0, &frame_bytes);
+            let frame_bytes = frame_block.map(f32::to_le_bytes);
+            self.queue
+                .write_buffer(&shader.frame, 0, frame_bytes.as_flattened());
             let mut params = pass.params.clone();
             params.resize(shader.params.size() as usize, 0);
             self.queue.write_buffer(&shader.params, 0, &params);
 
             let pool = &self.pool[&(width, height)];
-            let view = pool[target]
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
+            let view = &pool[target].view;
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -4109,7 +4110,7 @@ impl WgpuCompositor {
                 let mut render = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("concat pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
+                        view,
                         depth_slice: None,
                         resolve_target: None,
                         ops: wgpu::Operations {
@@ -4178,20 +4179,17 @@ impl WgpuCompositor {
             clip_time,
             0.0,
         ];
-        let frame_bytes: Vec<u8> = frame_block.iter().flat_map(|v| v.to_le_bytes()).collect();
-        self.queue.write_buffer(&shader.frame, 0, &frame_bytes);
+        let frame_bytes = frame_block.map(f32::to_le_bytes);
+        self.queue
+            .write_buffer(&shader.frame, 0, frame_bytes.as_flattened());
         let mut params = pass.params.clone();
         params.resize(shader.params.size() as usize, 0);
         self.queue.write_buffer(&shader.params, 0, &params);
 
-        let view_of = |size: (u32, u32), index: usize| {
-            self.pool[&size][index]
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default())
-        };
+        let view_of = |size: (u32, u32), index: usize| &self.pool[&size][index].view;
         let layer_view = view_of((width, height), layer);
         let into_view = view_of((width, height), into);
-        let picture_views: Vec<wgpu::TextureView> = pictures
+        let picture_views: Vec<_> = pictures
             .iter()
             .map(|&(size, index)| view_of(size, index))
             .collect();
@@ -4206,7 +4204,7 @@ impl WgpuCompositor {
                 [
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&layer_view),
+                        resource: wgpu::BindingResource::TextureView(layer_view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
@@ -4231,8 +4229,8 @@ impl WgpuCompositor {
                 entries: &entries,
             });
             let (pipeline, view) = match shader.stages.get(stage) {
-                Some(pipeline) => (pipeline, &picture_views[stage]),
-                None => (&shader.pipeline, &into_view),
+                Some(pipeline) => (pipeline, picture_views[stage]),
+                None => (&shader.pipeline, into_view),
             };
             let mut render = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("concat pass"),

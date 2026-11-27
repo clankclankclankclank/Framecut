@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+[[probe]]
+name = "A uniform translucent plate keeps its colour and alpha"
+input = [0.12, 0.4, 0.75, 0.6]
+expect = [0.12, 0.4, 0.75, 0.6]

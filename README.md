@@ -1,3 +1,9 @@
+# Framecut
+
+Framecut is an independent, AGPL-3.0-or-later fork of Concat. It adds ten GPU effect packages, a refreshed native studio and a macOS source launcher. See the [Framecut build guide](docs/FRAMECUT.md), [benchmarks](docs/FRAMECUT_BENCHMARKS.md), and [landing page source](site/).
+
+The original Concat documentation starts below.
+
 <p align="center">
   <img src="https://cdn.jsdelivr.net/gh/jub0t/Concat@main/assets/concat-mark-dark.png" alt="Concat" width="100" />
 </p>

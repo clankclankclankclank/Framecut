@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.orbital-blur"
+name = "Orbital Blur"
+kind = "effect"
+category = "Blur"
+order = 152
+description = "Combine spin and zoom blur around a movable centre."
+intensity = "spin"
+
+[[param]]
+key = "spin"
+label = "Spin"
+min = -65
+max = 65
+default = 22
+step = 1
+unit = "°"
+
+[[param]]
+key = "zoom"
+label = "Zoom"
+min = -70
+max = 70
+default = 12
+step = 1
+unit = "%"
+
+[[param]]
+key = "centre_x"
+label = "Centre X"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+
+[[param]]
+key = "centre_y"
+label = "Centre Y"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { spin = 45, zoom = 45 }

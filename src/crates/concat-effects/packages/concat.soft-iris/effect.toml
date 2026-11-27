@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.soft-iris"
+name = "Soft Iris"
+kind = "transition"
+category = "Wipe"
+order = 171
+description = "Open a feathered circular aperture onto the next shot."
+
+[[param]]
+key = "feather"
+label = "Feather"
+min = 1
+max = 60
+default = 18
+step = 1
+unit = "%"
+
+[[param]]
+key = "centre_x"
+label = "Centre X"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+
+[[param]]
+key = "centre_y"
+label = "Centre Y"
+min = 0
+max = 100
+default = 50
+step = 1
+unit = "%"
+
+[transition]
+fallback = "circleopen"
+xfade = "circleopen"
+entry = "effect.wgsl"

@@ -90,6 +90,9 @@ pub fn path_for(
         && let Ok(since) = modified.duration_since(std::time::UNIX_EPOCH)
     {
         since.as_secs().hash(&mut hasher);
+        if since.subsec_nanos() != 0 {
+            since.subsec_nanos().hash(&mut hasher);
+        }
     }
     Some(
         project
@@ -244,7 +247,7 @@ pub fn sweep(project: &Path, keep: &HashSet<PathBuf>) -> usize {
 
 /// Writes the proxy of `source`, read as `range`, at `size` to `target`:
 /// the working codec (see [`VideoCodec::WORKING`]), two threads, in
-/// software, into a temporary name
+/// software for encoding SDR, into a temporary name
 /// that is moved into place only when whole, so a copy that is there is a
 /// copy that is complete. The copy is tagged video range and converted to
 /// match, so it is read as it is and needs no correction of its own. An
@@ -273,7 +276,6 @@ pub fn write(
     let partial = target.with_extension("part.mp4");
     let options = DecodeOptions::default()
         .scaled_to(width, height)
-        .in_software()
         .threaded(2)
         .in_range(range)
         .deep(hdr);
@@ -310,6 +312,7 @@ pub fn write(
         .duration
         .map(|duration| duration.as_f64() * rate.fps().as_f64())
         .filter(|frames| *frames >= 1.0);
+    let progress_interval = expected.map(|frames| (frames / 100.0).ceil() as u64);
     let result = (|| {
         let mut written = 0u64;
         while let Some(frame) = decoder.next_frame().map_err(|error| error.to_string())? {
@@ -319,8 +322,8 @@ pub fn write(
             written += 1;
             // A percent at a time: the lock is shared with the window,
             // which reads it on every publish of the bin.
-            if let Some(expected) = expected
-                && written.is_multiple_of((expected / 100.0).ceil().max(1.0) as u64)
+            if let (Some(expected), Some(interval)) = (expected, progress_interval)
+                && written.is_multiple_of(interval)
             {
                 set_progress(source, Some((written as f64 / expected) as f32));
             }

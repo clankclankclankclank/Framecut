@@ -162,11 +162,8 @@ impl VideoCodec {
     /// encoders (scripts/ffmpeg-mobile.sh), and its cores are no match for
     /// its chip anyway.
     ///
-    /// The alpha codecs have one encoder each, on the CPU everywhere:
-    /// FFmpeg's own ProRes encoder, which every build carries, a phone's
-    /// too, and libvpx for VP9, which the desktops' builds link and a
-    /// phone's does not. No hardware encoder here
-    /// takes an alpha layer.
+    /// ProRes 4444 can use VideoToolbox on supported Macs and falls back
+    /// to FFmpeg's own ProRes encoder. VP9 alpha uses libvpx where linked.
     ///
     /// H.264 and HEVC are the platform's alone: Concat carries no encoder
     /// of its own for either, so their patent pools are the platform's
@@ -187,6 +184,9 @@ impl VideoCodec {
     /// `hardware`.
     pub fn encoders(self, hardware: bool) -> &'static [&'static str] {
         match self {
+            VideoCodec::ProRes4444 if cfg!(target_os = "macos") && hardware => {
+                return &["prores_videotoolbox", "prores_ks"];
+            }
             VideoCodec::ProRes4444 => return &["prores_ks"],
             VideoCodec::Vp9Alpha => return &["libvpx-vp9"],
             VideoCodec::Mpeg4 => return &["mpeg4"],
@@ -502,6 +502,7 @@ fn vpx_speed(preset: &str) -> u8 {
 fn alpha_pixel_format(encoder_name: &str) -> Option<Pixel> {
     match encoder_name {
         "prores_ks" => Some(Pixel::YUVA444P10LE),
+        "prores_videotoolbox" => Some(Pixel::AYUV64LE),
         "libvpx-vp9" => Some(Pixel::YUVA420P),
         _ => None,
     }
@@ -893,7 +894,10 @@ fn takes_ten_bits(encoder_name: &str) -> bool {
     }
     match Family::of(encoder_name) {
         Family::Software => true,
-        Family::VideoToolbox | Family::Amf => encoder_name.starts_with("hevc_"),
+        Family::VideoToolbox => {
+            encoder_name.starts_with("hevc_") || encoder_name == "prores_videotoolbox"
+        }
+        Family::Amf => encoder_name.starts_with("hevc_"),
         Family::Nvenc | Family::Qsv => {
             encoder_name.starts_with("hevc_") || encoder_name.starts_with("av1_")
         }
@@ -1022,6 +1026,17 @@ fn open_video(
     let plain = matches!(attempt, Attempt::Plain | Attempt::Component(_));
     let pixel_format =
         alpha_pixel_format(encoder_name).unwrap_or_else(|| family.pixel_format(options.ten_bit));
+    // The packed alpha format must be writable before selecting this encoder,
+    // so a build whose scaler lacks it can fall through to the planar one.
+    // SAFETY: swscale takes a known pixel format by value and uses no pointers.
+    if encoder_name == "prores_videotoolbox"
+        && unsafe { ffmpeg::sys::sws_isSupportedOutput(pixel_format.into()) } == 0
+    {
+        return Err(Error::Missing {
+            what: "pixel conversion",
+            name: "AYUV64LE".to_owned(),
+        });
+    }
     // ProRes has no rate to steer: its profile is the quality.
     let rated = options.codec.rate_controlled();
     let cbr = rated && options.rate_mode == RateMode::Cbr && options.bitrate_kbps > 0;
@@ -1127,7 +1142,7 @@ fn open_video(
     // software encoder refuse it, and are told the bitrate the CRF
     // would come to instead. CBR is the target as the average and as the
     // ceiling over a second.
-    if family == Family::VideoToolbox && !average {
+    if family == Family::VideoToolbox && rated && !average {
         if cbr {
             video.set_bit_rate(options.bitrate_kbps as usize * 1000);
             video.set_max_bit_rate(options.bitrate_kbps as usize * 1000);
@@ -1228,6 +1243,10 @@ fn open_video(
         // name with the context's, which would take the word first. The
         // alpha at sixteen bits, the most the format keeps, and Apple's
         // vendor code, which some of the editors that read it look for.
+        "prores_videotoolbox" => ffmpeg::dict! {
+            "profile" => "4444",
+            "allow_sw" => "0",
+        },
         "prores_ks" => ffmpeg::dict! {
             "alpha_bits" => "16",
             "vendor" => "apl0",

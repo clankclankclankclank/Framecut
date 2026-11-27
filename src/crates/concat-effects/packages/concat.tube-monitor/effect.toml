@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+format = 2
+
+[effect]
+id = "concat.tube-monitor"
+name = "Tube Monitor"
+kind = "effect"
+category = "Retro"
+order = 170
+description = "Bend the picture through CRT glass with scanlines and a drifting tape tear."
+intensity = "amount"
+
+[[param]]
+key = "amount"
+label = "Amount"
+min = 0
+max = 100
+default = 55
+step = 1
+unit = "%"
+
+[[param]]
+key = "curve"
+label = "Glass Curve"
+min = 0
+max = 100
+default = 35
+step = 1
+unit = "%"
+
+[[param]]
+key = "scanlines"
+label = "Scanlines"
+min = 0
+max = 100
+default = 46
+step = 1
+unit = "%"
+
+[[param]]
+key = "tracking"
+label = "Tape Tear"
+min = 0
+max = 100
+default = 22
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"
+
+[card]
+params = { amount = 100 }

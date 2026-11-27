@@ -210,10 +210,6 @@ export component TitleBar inherits Rectangle {
         padding-right: root.own-buttons ? 0px : 8px;
         spacing: 2px;
 
-        // No mark and no wordmark: the strip opens on the menus. A window
-        // does not need to say whose it is on every frame, and the launch
-        // screen's heading already carries the name where it means something.
-
         // Each label reports its own position rather than a fixed one: they
         // are sized from their text, so where "View" starts depends on how
         // long "File" and "Edit" are.
@@ -355,6 +351,15 @@ export component TitleBar inherits Rectangle {
         width: self.preferred-width;
         height: parent.height;
         spacing: 6px;
+
+        VerticalLayout {
+            alignment: center;
+            Image {
+                source: @image-url("assets/framecut.png");
+                width: 19px;
+                height: 19px;
+            }
+        }
 
         VerticalLayout {
             alignment: center;

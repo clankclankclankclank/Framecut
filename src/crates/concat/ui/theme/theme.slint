@@ -74,7 +74,7 @@ export global Theme {
     /// name is the English word Settings shows for it, and the id it is
     /// remembered under in settings.json, lower-cased; the dialog holds the
     /// same list wrapped for translation, in this order.
-    out property <[string]> accent-names: ["Lime", "Sky", "Violet", "Rose", "Amber", "Mint"];
+    out property <[string]> accent-names: ["Gold", "Sky", "Violet", "Rose", "Amber", "Mint"];
     /// The playhead's colour when one was picked by hand in Settings >
     /// Appearance, in place of the palette's own. Read only while
     /// `playhead-is-custom`, and one colour under both palettes, for the
@@ -341,7 +341,7 @@ export global Theme {
     // which colour is *offered* moves: a title already painted keeps its
     // colour, because the colour is in the document and not in the theme.
     // A custom accent has one colour, not two, so it takes the first slot
-    // and the lime keeps the second.
+    // and the gold keeps the second.
     out property <[color]> swatches: [
         #ffffff, #f5f5f7, #a1a1a6, #6e6e73, #15220a, #000000,
         accent-is-custom ? accent-custom : Dark.accents[accent-choice].accent,
