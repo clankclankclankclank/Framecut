@@ -15,8 +15,8 @@
 //! ms at 540x960 - and every video gets one, whatever its size: the seek
 //! is as slow on an HD file as on a 4K one.
 //!
-//! Written on the scheduler's proxy lane - one at a time, on two threads,
-//! so the machine stays usable meanwhile - and adopted into the reader
+//! Written on the scheduler's proxy lane - one at a time, with a short queue
+//! between decode and encode - and adopted into the reader
 //! pool as the file's stand-in. A request that asks for the proxy reads
 //! it; the resting monitor and the export never do, and see the original.
 //! The copy is named after the file's path, size and modification time, so
@@ -279,7 +279,6 @@ pub fn write(
         .threaded(2)
         .in_range(range)
         .deep(hdr);
-    let mut decoder = Decoder::open(source, &options).map_err(|error| error.to_string())?;
     let encoding = EncodeOptions {
         codec: if hdr {
             VideoCodec::Hevc
@@ -313,27 +312,48 @@ pub fn write(
         .map(|duration| duration.as_f64() * rate.fps().as_f64())
         .filter(|frames| *frames >= 1.0);
     let progress_interval = expected.map(|frames| (frames / 100.0).ceil() as u64);
-    let result = (|| {
-        let mut written = 0u64;
-        while let Some(frame) = decoder.next_frame().map_err(|error| error.to_string())? {
-            encoder
-                .write_frame(&frame)
-                .map_err(|error| error.to_string())?;
-            written += 1;
-            // A percent at a time: the lock is shared with the window,
-            // which reads it on every publish of the bin.
-            if let (Some(expected), Some(interval)) = (expected, progress_interval)
-                && written.is_multiple_of(interval)
-            {
-                set_progress(source, Some((written as f64 / expected) as f32));
+    let bytes = u64::from(width) * u64::from(height) * if hdr { 8 } else { 4 };
+    let depth = (8 * 1024 * 1024 / bytes.max(1)).clamp(1, 2) as usize;
+    let result = std::thread::scope(|scope| {
+        let (send, frames) = std::sync::mpsc::sync_channel(depth);
+        let decode = std::thread::Builder::new()
+            .name("concat proxy decode".to_owned())
+            .spawn_scoped(scope, move || -> Result<(), String> {
+                let mut decoder =
+                    Decoder::open(source, &options).map_err(|error| error.to_string())?;
+                while let Some(frame) = decoder.next_frame().map_err(|error| error.to_string())? {
+                    if send.send(frame).is_err() {
+                        break;
+                    }
+                }
+                Ok(())
+            })
+            .map_err(|error| error.to_string())?;
+        let encode = (|| {
+            for (index, frame) in (&frames).into_iter().enumerate() {
+                encoder
+                    .write_frame(&frame)
+                    .map_err(|error| error.to_string())?;
+                let written = index as u64 + 1;
+                if let (Some(expected), Some(interval)) = (expected, progress_interval)
+                    && written.is_multiple_of(interval)
+                {
+                    set_progress(source, Some((written as f64 / expected) as f32));
+                }
             }
-        }
+            Ok::<(), String>(())
+        })();
+        // An encode error must release a producer blocked on a full queue.
+        drop(frames);
+        let decoded = decode
+            .join()
+            .map_err(|_| "proxy decode thread panicked".to_owned())?;
+        encode?;
+        decoded?;
         encoder.finish().map_err(|error| error.to_string())
-    })();
-    // Windows will not rename or delete a file something still holds open,
-    // and a finished encoder keeps its output open until it is dropped.
+    });
+    // Windows will not rename or delete a file something still holds open.
     drop(encoder);
-    drop(decoder);
     match result {
         Ok(()) => std::fs::rename(&partial, target)
             .map_err(|error| format!("{}: {error}", target.display())),

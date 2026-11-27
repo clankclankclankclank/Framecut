@@ -683,7 +683,7 @@ export component SettingsDialog inherits Sheet {
     /// The playhead's colour, picked by hand in place of the palette's own.
     callback playhead-changed(colour: color);
     /// One of the accents for the playhead, as an index into
-    /// `Theme.accent-names`: 0, Lime, is the palette's own.
+    /// `Theme.accent-names`: 0, Gold, is the palette's own.
     callback playhead-chosen(index: int);
     /// The interface scale, as an index into the scales the row lists: 0
     /// follows the display's own.
@@ -733,7 +733,7 @@ export component SettingsDialog inherits Sheet {
     /// that only ever reached `I18n.t` through a variable would never be
     /// offered to a translator.
     property <[string]> accent-labels: [
-        I18n.t("settings.lime"), I18n.t("settings.sky"),
+        "Gold", I18n.t("settings.sky"),
         I18n.t("settings.violet"), I18n.t("settings.rose"), I18n.t("settings.amber"),
         I18n.t("settings.mint"),
     ];
@@ -1227,7 +1227,7 @@ export component SettingsDialog inherits Sheet {
                 // found at a glance, whatever the clips under it are wearing.
                 // The same seven dots the accent has: the six on the list,
                 // each worn as the palette that is on has it - the first,
-                // Lime, is the palette's own playhead - and the seventh any
+                // Gold, is the palette's own playhead - and the seventh any
                 // colour at all, through the same picker, one colour under
                 // both palettes. Read off the Theme global for the same
                 // reason the accent is, and the hex is always shown: what the

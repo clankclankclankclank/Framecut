@@ -44,7 +44,8 @@ pub const FIRST_SWITCHABLE: Version = Version::new(0, 2, 5);
 
 /// GitHub's list of the repository's releases, newest first. A hundred
 /// covers years of releases at this pace.
-const RELEASES_URL: &str = "https://api.github.com/repos/clankclankclankclank/Concat/releases?per_page=100";
+const RELEASES_URL: &str =
+    "https://api.github.com/repos/clankclankclankclank/Concat/releases?per_page=100";
 
 /// A release's number: `0.2.5`. A tag carries a `v` in front of it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
